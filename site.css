@@ -5,3 +5,29 @@
 @media(max-width:760px){.hero .shell,.bodygrid{grid-template-columns:1fr;gap:1.6rem}.shell{width:calc(100% - 2rem)}.hero .intro{max-width:55ch}.bodygrid{padding-block:2.3rem}.hero figure img{max-height:none}.navwalk{display:none}footer .shell{align-items:start;flex-direction:column}.hero h1{font-size:clamp(2.3rem,8vw,3.4rem)}}
 
 .paper p code{white-space:nowrap}.hero figcaption a{color:inherit}.bodygrid a:hover,footer a:hover{text-decoration-thickness:2px}
+
+/* Keep the existing grid, but don't stack page-level padding inside a section. */
+.workflow > .shell > .bodygrid { padding-block:.65rem .6rem; gap:clamp(1.35rem,3vw,2.8rem); }
+.workflow > .shell > .bodygrid h3:first-child { margin-top:0; }
+.workflow > .shell > .bodygrid > section > :last-child { margin-bottom:0; }
+.workflow > .shell > :last-child { margin-bottom:0; }
+@media(min-width:761px){
+  .workflow > .shell > .bodygrid > section + section { border-top:0; padding-top:0; border-inline-start:1px solid #cbdad3; padding-inline-start:clamp(1rem,2vw,1.75rem); }
+}
+@media(max-width:760px){
+  .workflow > .shell { padding-block:1.75rem; }
+  .workflow > .shell > .bodygrid > section + section { padding-top:1rem; }
+}
+
+/* Match the new note picker to the existing pitch controls. */
+.pitch select { display:block; max-width:100%; margin:0 0 1rem; padding:.4rem .6rem; font:inherit; color:#153237; border:1px solid #729b8e; border-radius:.3rem; background:#f7faf8; }
+.pitch select:focus-visible { outline:3px solid #d68c29; outline-offset:3px; }
+.pitch-source { padding-block:clamp(1.5rem,4vw,3rem); }
+.pitch-source h1 { font-size:clamp(2rem,5vw,3.25rem); }
+.pitch-source pre { max-width:100%; overflow:auto; tab-size:4; }
+
+
+/* The source viewer keeps JavaScript lines and indentation intact. */
+.pitch-source pre { white-space:pre; overflow-wrap:normal; overflow-x:auto; }
+.pitch-source pre:focus-visible { outline:3px solid #d68c29; outline-offset:3px; }
+.source-scroll-help { margin-block:0 .5rem; font-size:.94rem; }
