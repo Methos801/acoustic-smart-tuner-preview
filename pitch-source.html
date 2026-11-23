@@ -4,24 +4,21 @@
 <body><header><nav class="shell" aria-label="Main navigation"><span class="brand">Acoustic Smart Tuner</span><a href="index.html#example">Back to the pitch bench</a></nav></header>
 <main class="shell pitch-source"><h1>Read the pitch detector</h1>
 <p>This is the JavaScript bundled with the pitch bench. The bench uses the autocorrelation function on generated samples. The file also contains a separate harmonic-spectrum detector, which this demo does not call.</p>
-<p><a href="#autocorrelation">Go to the autocorrelation function</a> · <a href="https://github.com/Methos801/acoustic-smart-tuner-preview/blob/8dd526597a3b947cabd3854fa2df9d2af2bef6fe/pitch.js">View the pinned file on GitHub</a></p>
+<p><a href="#autocorrelation">Go to the autocorrelation function</a> · <a href="https://github.com/Methos801/acoustic-smart-tuner-preview/blob/f09840c37580da79ab284ffb40a5eb1dfa7da82b/pitch.js">View the pinned file on GitHub</a></p>
 <p id="source-scroll-help" class="source-scroll-help">Scroll sideways to read long lines. With the code focused, use the arrow keys.</p>
 <pre tabindex="0" aria-label="Pitch detector JavaScript" aria-describedby="source-scroll-help"><code>/**
  * Fundamental pitch-detection algorithms.
  *
  * Two complementary detectors are provided:
- *   - Harmonic Product Spectrum (HPS) for frequency-domain data, resistant to
- *     octave errors in woodwinds / double-reeds.
- *   - Autocorrelation for time-domain data, excellent in the low register
- *     (contrabass, bassoon).
+ *   - Harmonic Product Spectrum (HPS) for frequency-domain data.
+ *   - Autocorrelation for time-domain data.
  *
  * Both are pure functions over typed arrays and run identically in the browser
  * and in Node.js. Extracted verbatim from the original `src/utils/audioUtils.ts`.
  */
 /**
- * Real-time fundamental pitch detection pipeline using Harmonic Product Spectrum (HPS)
- * combined with parabolic interpolation for superb sub-Hz resolution.
- * Highly resistant to octave jump errors in woodwinds / double-reeds.
+ * Harmonic Product Spectrum (HPS) pitch detection with parabolic interpolation between bins.
+ * The pitch bench does not use this function.
  *
  * @param fftData Float32Array containing standard FFT log magnitudes (dB) as returned by AnalyserNode.getFloatFrequencyData
  * @param sampleRate audio sampling rate (typically 44100 or 48000)
@@ -33,13 +30,9 @@ function detectPitchHPS(fftData, sampleRate, minFreq = 30, maxFreq = 2000) {
     const binResolution = sampleRate / fftSize;
     const minBin = Math.max(1, Math.floor(minFreq / binResolution));
     const maxBin = Math.min(fftData.length - 1, Math.ceil(maxFreq / binResolution));
-    // Calculate linear magnitudes from decibels (standard Web Audio analyser returns log/dB values depending on getFloatFrequencyData)
-    // Actually, Web Audio AnalyserNode.getFloatFrequencyData yields values in dB (typically -100 to 0).
-    // First, convert them to linear amplitude scale.
+    // getFloatFrequencyData returns decibels; convert every bin to linear amplitude.
     const magnitudes = new Float32Array(fftData.length);
     for (let i = 0; i &lt; fftData.length; i++) {
-        // If fftData is already linear (e.g., if custom spectrogram is fed), keep it, otherwise scale
-        // If values are &lt;= 0, they are in dB (or silent), if there&#x27;s any &gt; 1.0 (usually dB are negative)
         const dbValue = fftData[i];
         magnitudes[i] = Math.pow(10, dbValue / 20); // convert dB to Amplitude
     }
@@ -76,7 +69,7 @@ function detectPitchHPS(fftData, sampleRate, minFreq = 30, maxFreq = 2000) {
     if (peakBin === -1 || maxWeight &lt; 1e-35) {
         return { frequency: 0, confidence: 0 };
     }
-    // Use quadratic (parabolic) interpolation around peakBin for sub-hertz accuracy
+    // Use quadratic (parabolic) interpolation around the peak bin.
     // Otherwise resolution is limited to binResolution (e.g., 44100/2048 = 21.5 Hz, which is too coarse to tune!)
     let interpolatedBin = peakBin;
     if (peakBin &gt; 0 &amp;&amp; peakBin &lt; fftData.length - 1) {
@@ -103,7 +96,7 @@ function detectPitchHPS(fftData, sampleRate, minFreq = 30, maxFreq = 2000) {
     };
 }
 /**
- * Autocorrelation pitch detection fallback (excellent for lower register notes, contrabass, bassoon).
+ * Autocorrelation is the time-domain detector the pitch bench uses.
  *
  * @param waveData Time-domain float data (-1.0 to 1.0)
  * @param sampleRate audio sample rate
