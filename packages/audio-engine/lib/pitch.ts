@@ -2,10 +2,8 @@
  * Fundamental pitch-detection algorithms.
  *
  * Two complementary detectors are provided:
- *   - Harmonic Product Spectrum (HPS) for frequency-domain data, resistant to
- *     octave errors in woodwinds / double-reeds.
- *   - Autocorrelation for time-domain data, excellent in the low register
- *     (contrabass, bassoon).
+ *   - Harmonic Product Spectrum (HPS) for frequency-domain data.
+ *   - Autocorrelation for time-domain data.
  *
  * Both are pure functions over typed arrays and run identically in the browser
  * and in Node.js. Extracted verbatim from the original `src/utils/audioUtils.ts`.
@@ -14,9 +12,8 @@
 import { PitchEstimate } from './types';
 
 /**
- * Real-time fundamental pitch detection pipeline using Harmonic Product Spectrum (HPS)
- * combined with parabolic interpolation for superb sub-Hz resolution.
- * Highly resistant to octave jump errors in woodwinds / double-reeds.
+ * Harmonic Product Spectrum (HPS) pitch detection with parabolic interpolation between bins.
+ * The pitch bench does not use this function.
  *
  * @param fftData Float32Array containing standard FFT log magnitudes (dB) as returned by AnalyserNode.getFloatFrequencyData
  * @param sampleRate audio sampling rate (typically 44100 or 48000)
@@ -35,13 +32,9 @@ export function detectPitchHPS(
   const minBin = Math.max(1, Math.floor(minFreq / binResolution));
   const maxBin = Math.min(fftData.length - 1, Math.ceil(maxFreq / binResolution));
 
-  // Calculate linear magnitudes from decibels (standard Web Audio analyser returns log/dB values depending on getFloatFrequencyData)
-  // Actually, Web Audio AnalyserNode.getFloatFrequencyData yields values in dB (typically -100 to 0).
-  // First, convert them to linear amplitude scale.
+  // getFloatFrequencyData returns decibels; convert every bin to linear amplitude.
   const magnitudes = new Float32Array(fftData.length);
   for (let i = 0; i < fftData.length; i++) {
-    // If fftData is already linear (e.g., if custom spectrogram is fed), keep it, otherwise scale
-    // If values are <= 0, they are in dB (or silent), if there's any > 1.0 (usually dB are negative)
     const dbValue = fftData[i];
     magnitudes[i] = Math.pow(10, dbValue / 20); // convert dB to Amplitude
   }
@@ -83,7 +76,7 @@ export function detectPitchHPS(
     return { frequency: 0, confidence: 0 };
   }
 
-  // Use quadratic (parabolic) interpolation around peakBin for sub-hertz accuracy
+  // Use quadratic (parabolic) interpolation around the peak bin.
   // Otherwise resolution is limited to binResolution (e.g., 44100/2048 = 21.5 Hz, which is too coarse to tune!)
   let interpolatedBin = peakBin;
   if (peakBin > 0 && peakBin < fftData.length - 1) {
@@ -115,7 +108,7 @@ export function detectPitchHPS(
 }
 
 /**
- * Autocorrelation pitch detection fallback (excellent for lower register notes, contrabass, bassoon).
+ * Autocorrelation is the time-domain detector the pitch bench uses.
  *
  * @param waveData Time-domain float data (-1.0 to 1.0)
  * @param sampleRate audio sample rate
